@@ -29,4 +29,4 @@ In this lab assignment, we implemented the well-known "power" function in two di
 
 ## Lab Assignment 2: BlackJack ##
 
-In this lab assignment, we implemented a Haskell program for playing a card game called BlackJack.
+In this lab assignment, we implemented a simple variant of the game Black Jack, using recursive functions and QuickCheck properties. The input/output functionality is provided in the Wrapper.hs file, which takes care of those things.

@@ -21,7 +21,7 @@ Prelude>  :l example.hs
 Ok, modules loaded: Main.
 *Main>
 ```
-and you can use :reload to reload the file(s) after changes.
+You can also use :reload to reload the file(s) after changes.
 
 ## Lab assignment 1: the power function ##
 

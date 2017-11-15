@@ -16,7 +16,7 @@ $ ghci
 ### Using the GHCi ###
 If you already have created a file called example.hs in Haskell you can use :l and :r as abbreviations for :load and :reload.
 ```
-Prelude>  :load example.hs
+Prelude>  :l example.hs
 [1 of 1] Compiling Main             ( example.hs, interpreted )
 Ok, modules loaded: Main.
 *Main>

@@ -30,3 +30,7 @@ In this lab assignment, we implemented the well-known "power" function in two di
 ## Lab Assignment 2: BlackJack ##
 
 In this lab assignment, we implemented a simple variant of the game Black Jack, using recursive functions and QuickCheck properties. The input/output functionality is provided in the Wrapper.hs file, which takes care of those things.
+
+## Lab Assignment 3: Sodoku ##
+
+In this Lab Assignment, we designed a program that will be able to solve Sudokus, a popular logical puzzle originating from Japan. To implement a Sudoku-solving program, we need to come up with a way of modelling Sudokus. A Sudoku is a matrix of digits or blanks and the natural way of modelling a matrix is as a list of lists.

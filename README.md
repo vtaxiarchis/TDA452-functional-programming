@@ -21,15 +21,16 @@ Prelude>  :l example.hs
 Ok, modules loaded: Main.
 *Main>
 ```
-You can also use :reload to reload the file(s) after changes.
 
 ## Lab assignment 1: the power function ##
 
 In this lab assignment, we implemented the well-known "power" function in two different new ways. The power function takes two arguments n and k and computes n^k (works only for non-negative k).
 
+
 ## Lab Assignment 2: BlackJack ##
 
 In this lab assignment, we implemented a simple variant of the game Black Jack, using recursive functions and QuickCheck properties. The input/output functionality is provided in the Wrapper.hs file, which takes care of those things.
+
 
 ## Lab Assignment 3: Sodoku ##
 

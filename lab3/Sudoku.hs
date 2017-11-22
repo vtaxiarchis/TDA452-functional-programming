@@ -24,33 +24,33 @@ example =
 
 -- Function that generates an empty Sudoku table
 allBlankSudoku :: Sudoku
-allBlankSudoku = Sudoku ([row | _ <- [1..9]])
+allBlankSudoku = Sudoku [row | _ <- [1..9]]
                  where row = [Nothing | _ <- [1..9]]
 
 -- Function that checks if given Sudoku table is valid
 isSudoku :: Sudoku -> Bool
 isSudoku s = (length (rows s) == 9) &&
-            and [ length r == 9 | r <- (rows s)] &&
-            and [ check r | r <- (rows s)]
+            and [ length r == 9 | r <- rows s] &&
+            and [ check r | r <- rows s]
          where check [] = True
                check (Nothing:xs) = check xs
                check (Just n:xs) = (n >= 1 && n <= 9) && check xs
 
 -- Function that checks if all cells of Sudoku table is filled
 isFilled :: Sudoku -> Bool
-isFilled s = and [check r | r <- (rows s)]
+isFilled s = and [check r | r <- rows s]
                  where check [] = True
                        check (Nothing:xs) = False
                        check (_:xs) = check xs
 
 -- Helper method that prints rows of a Sudoku table
 printSudoku' :: [[Maybe Int]] -> IO ()
-printSudoku' [] = do putStrLn ""
+printSudoku' [] = putStrLn ""
 printSudoku' (x:xs) = do putStrLn (convert x)
                          printSudoku' xs
                       where convert [] = ""
                             convert (Nothing:xs) = '.' : convert xs
-                            convert (Just n:xs) = (show n) ++ convert xs
+                            convert (Just n:xs) = show n ++ convert xs
 
 
 -- Function to print a Sudoku table
@@ -60,12 +60,12 @@ printSudoku s = printSudoku' (rows s)
 
 -- Helper function that reads lines from a file and converts them to a nested list of Maybe values
 readSudoku' :: [String] -> [[Maybe Int]] -> Sudoku
-readSudoku' [] r = (Sudoku r)
-readSudoku' (x:xs) r = readSudoku' xs ((convert x) : r)
+readSudoku' [] r = Sudoku r
+readSudoku' (x:xs) r = readSudoku' xs (convert x : r)
                        where convert [] = []
                              convert ('\n':rest) = []
-                             convert ('.':rest) = Nothing : (convert rest)
-                             convert (n:rest) =  (Just (digitToInt n)) : convert rest
+                             convert ('.':rest) = Nothing : convert rest
+                             convert (n:rest) =  Just (digitToInt n) : convert rest
 
 -- Function that reads Sudoku table from file. Returns a blank Sudoku if not valid.
 readSudoku :: FilePath -> IO Sudoku
@@ -87,32 +87,32 @@ instance Arbitrary Sudoku where
 
 -- Property to ensure generated Sudoku is valid
 prop_Sudoku :: Sudoku -> Bool
-prop_Sudoku s = isSudoku s
+prop_Sudoku = isSudoku
 
 
 type Block = [Maybe Int]
 
 -- Function to determine if block contains duplicates or not
 isOkayBlock :: Block -> Bool
-isOkayBlock b = (length (nub b')) == (length b')
-                where b' = filter (\cell -> cell /= Nothing) b
+isOkayBlock b = length (nub b') == length b'
+                where b' = filter (/= Nothing) b
 
 -- Function that takes 3 rows of a Sudoku table, and generates blocks of size 9.
 -- Recursively takes first 3 elements of each row to accumulate them in a block.
 generate3Blocks' :: [[Maybe Int]] -> [[Maybe Int]]
-generate3Blocks' ([[],[],[]]) = []
+generate3Blocks' [[],[],[]] = []
 generate3Blocks' rows =
-  foldr (++) [] ([ take 3 r | r <- rows]) : generate3Blocks' ([ drop 3 r | r <- rows])
+  concat [ take 3 r | r <- rows] : generate3Blocks' [ drop 3 r | r <- rows]
 
 -- Function that takes rows of a Sudoku table and generates 3-square blocks from them
 generate3Blocks :: [[Maybe Int]] -> [[Maybe Int]]
-generate3Blocks rows = (generate3Blocks' (take 3 rows)) ++
-                       (generate3Blocks' (take 3 (drop 3 rows))) ++
-                       (generate3Blocks' (take 3 (drop 6 rows)))
+generate3Blocks rows = generate3Blocks' (take 3 rows) ++
+                       generate3Blocks' (take 3 (drop 3 rows)) ++
+                       generate3Blocks' (take 3 (drop 6 rows))
 
 -- Function to generate blocks of a Sudoku table
 blocks :: Sudoku -> [Block]
-blocks s = allRows ++ generate3Blocks allRows ++ (transpose allRows)
+blocks s = allRows ++ generate3Blocks allRows ++ transpose allRows
           where allRows = rows s
 
 -- Property to check correct number of blocks generated and all blocks are of size 9
@@ -130,7 +130,7 @@ type Pos = (Int,Int)
 -- on calculated row and column numbers
 blanks' :: [[Maybe Int]] -> [(Int, Int)] -> Int -> [(Int, Int)]
 blanks' [] b _ = b
-blanks' (x:xs) b row = blanks' xs ((b ++ adder x [] 0)) (row + 1)
+blanks' (x:xs) b row = blanks' xs (b ++ adder x [] 0) (row + 1)
   where adder [] pairs _ = pairs
         adder (Nothing:xs) pairs col = adder xs ((row, col):pairs) (col + 1)
         adder (_:xs) pairs col = adder xs pairs (col + 1)
@@ -141,8 +141,6 @@ blanks s = blanks' (rows s ) [] 0
 
 -- Property to check all calculated blank cells have blank value
 prop_BlanksAreReallyBlank :: Sudoku -> Bool
-prop_BlanksAreReallyBlank s = all (\p -> ((rows' !! (fst p)) !! (snd p)) == Nothing) pos
+prop_BlanksAreReallyBlank s = all (\p -> isNothing rows' !! fst p !! snd p) pos
                              where pos   = blanks s
                                    rows' = rows s
-
-

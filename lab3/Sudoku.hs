@@ -141,6 +141,6 @@ blanks s = blanks' (rows s ) [] 0
 
 -- Property to check all calculated blank cells have blank value
 prop_BlanksAreReallyBlank :: Sudoku -> Bool
-prop_BlanksAreReallyBlank s = all (\p -> isNothing rows' !! fst p !! snd p) pos
+prop_BlanksAreReallyBlank s = all (\p -> ((rows' !! (fst p)) !! (snd p)) == Nothing) pos
                              where pos   = blanks s
                                    rows' = rows s

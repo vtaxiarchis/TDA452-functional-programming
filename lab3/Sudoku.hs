@@ -1,9 +1,9 @@
 import Data.Char (digitToInt)
 import Data.List
+import Data.Maybe
 import Test.QuickCheck
 
 data Sudoku = Sudoku { rows :: [[Maybe Int]] } deriving (Show)
-
 
 example :: Sudoku
 example =
@@ -57,7 +57,6 @@ printSudoku' (x:xs) = do putStrLn (convert x)
 printSudoku :: Sudoku -> IO ()
 printSudoku s = printSudoku' (rows s)
 
-
 -- Helper function that reads lines from a file and converts them to a nested list of Maybe values
 readSudoku' :: [String] -> [[Maybe Int]] -> Sudoku
 readSudoku' [] r = Sudoku r
@@ -88,7 +87,6 @@ instance Arbitrary Sudoku where
 -- Property to ensure generated Sudoku is valid
 prop_Sudoku :: Sudoku -> Bool
 prop_Sudoku = isSudoku
-
 
 type Block = [Maybe Int]
 
@@ -144,3 +142,30 @@ prop_BlanksAreReallyBlank :: Sudoku -> Bool
 prop_BlanksAreReallyBlank s = all (\p -> ((rows' !! (fst p)) !! (snd p)) == Nothing) pos
                              where pos   = blanks s
                                    rows' = rows s
+
+-- Funtion that for a given list and a tuple (containing an index in the list and a new value),
+-- updates the given list with the new value at the given index
+(!!=) :: [a] -> (Int, a) -> [a]
+(!!=) list (index, val) | (length list - 1 ) == index = fst (splitAt index list) ++ [val]
+                        | otherwise = fst cut ++ [val] ++ tail (snd cut)
+  where
+    cut = splitAt index list
+
+-- Function that for a given Sudoku, a position and a new cell value,
+-- updates the given Sudoku at the given position with the new value
+update :: Sudoku -> Pos -> Maybe Int -> Sudoku
+update s pos newCell = Sudoku (sRows !!= (fst pos, sRows !! fst pos !!= (snd pos, newCell)))
+  where
+    sRows = rows s
+
+-- Helper function that for a given Sudoku,
+-- checks the integers in the list and returns the legal ones
+candidates' :: [Int] -> Sudoku -> Pos -> [Int]
+candidates' [] _ _            = []
+candidates' (x:xs) s pos | isOkay(update s pos (Just x)) = x : candidates' xs s pos
+                         | otherwise = candidates' xs s pos
+
+-- Function that for a given Sudoku and a blank position,
+-- determines which numbers could be legally written into that position
+candidates :: Sudoku -> Pos -> [Int]
+candidates = candidates' [1..9]

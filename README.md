@@ -4,6 +4,17 @@ Labs for "TDA452 - Functional Programming" course
 
 ## Quick Setup ##
 
+### Install Haskell ###
+Haskell Platform is available in your distribution's package repository. Note that distribution-packaged versions are typically behind the current platform release. If you prefer to use the latest version rather than the distribution-packaged version, then you may want to use the generic Linux installer. Simply run:
+```
+$ sudo apt-get install haskell-platform
+```
+
+To install Haskell Platform in Mac OS X with Homebrew Cask, simply run:
+```
+$ brew cask install haskell-platform
+```
+
 ### Start Haskell ###
 If you have installed the Haskell Platform, open a terminal and type ghci (the name of the executable of the GHC interpreter) at the command prompt. Alternatively, if you are on Windows, you may choose WinGHCi in the Start menu.
 ```

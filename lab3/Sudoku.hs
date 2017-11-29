@@ -3,7 +3,7 @@ import Data.List
 import Data.Maybe
 import Test.QuickCheck
 
-data Sudoku = Sudoku { rows :: [[Maybe Int]] } deriving (Show)
+newtype Sudoku = Sudoku { rows :: [[Maybe Int]] } deriving (Show,Eq)
 
 example :: Sudoku
 example =
@@ -52,28 +52,23 @@ printSudoku' (x:xs) = do putStrLn (convert x)
                             convert (Nothing:xs) = '.' : convert xs
                             convert (Just n:xs) = show n ++ convert xs
 
-
 -- Function to print a Sudoku table
 printSudoku :: Sudoku -> IO ()
 printSudoku s = printSudoku' (rows s)
 
 -- Helper function that reads lines from a file and converts them to a nested list of Maybe values
-readSudoku' :: [String] -> [[Maybe Int]] -> Sudoku
-readSudoku' [] r = Sudoku r
-readSudoku' (x:xs) r = readSudoku' xs (convert x : r)
-                       where convert [] = []
-                             convert ('\n':rest) = []
-                             convert ('.':rest) = Nothing : convert rest
-                             convert (n:rest) =  Just (digitToInt n) : convert rest
+readSudoku' :: String -> Sudoku
+readSudoku' m = Sudoku (map row $ lines m)
+               where
+                 row = map cell
+                 cell '.' = Nothing
+                 cell c = Just (digitToInt c)
 
--- Function that reads Sudoku table from file. Returns a blank Sudoku if not valid.
+-- Function that reads Sudoku table from file. Returns a blank Sudoku if not valid
 readSudoku :: FilePath -> IO Sudoku
-readSudoku f = do str <- readFile f
-                  let ws = lines str
-                  let s = readSudoku' ws []
-                  if not (isSudoku s)
-                    then return allBlankSudoku
-                  else return s
+readSudoku f = do file <- readFile f
+                  let s = readSudoku' file
+                  return s
 
 -- Function to generate a random cell
 cell :: Gen (Maybe Int)
@@ -95,8 +90,8 @@ isOkayBlock :: Block -> Bool
 isOkayBlock b = length (nub b') == length b'
                 where b' = filter (/= Nothing) b
 
--- Function that takes 3 rows of a Sudoku table, and generates blocks of size 9.
--- Recursively takes first 3 elements of each row to accumulate them in a block.
+-- Function that takes 3 rows of a Sudoku table, and generates blocks of size 9
+-- Recursively takes first 3 elements of each row to accumulate them in a block
 generate3Blocks' :: [[Maybe Int]] -> [[Maybe Int]]
 generate3Blocks' [[],[],[]] = []
 generate3Blocks' rows =
@@ -139,7 +134,7 @@ blanks s = blanks' (rows s ) [] 0
 
 -- Property to check all calculated blank cells have blank value
 prop_BlanksAreReallyBlank :: Sudoku -> Bool
-prop_BlanksAreReallyBlank s = all (\p -> ((rows' !! (fst p)) !! (snd p)) == Nothing) pos
+prop_BlanksAreReallyBlank s = all (\p -> ((rows' !! fst p) !! snd p) == Nothing) pos
                              where pos   = blanks s
                                    rows' = rows s
 
@@ -155,13 +150,12 @@ prop_BlanksAreReallyBlank s = all (\p -> ((rows' !! (fst p)) !! (snd p)) == Noth
 -- updates the given Sudoku at the given position with the new value
 update :: Sudoku -> Pos -> Maybe Int -> Sudoku
 update s pos newCell = Sudoku (sRows !!= (fst pos, sRows !! fst pos !!= (snd pos, newCell)))
-  where
-    sRows = rows s
+  where sRows = rows s
 
 -- Helper function that for a given Sudoku,
 -- checks the integers in the list and returns the legal ones
 candidates' :: [Int] -> Sudoku -> Pos -> [Int]
-candidates' [] _ _            = []
+candidates' [] _ _ = []
 candidates' (x:xs) s pos | isOkay(update s pos (Just x)) = x : candidates' xs s pos
                          | otherwise = candidates' xs s pos
 
@@ -169,3 +163,49 @@ candidates' (x:xs) s pos | isOkay(update s pos (Just x)) = x : candidates' xs s 
 -- determines which numbers could be legally written into that position
 candidates :: Sudoku -> Pos -> [Int]
 candidates = candidates' [1..9]
+
+-- Basic function to solve Sudokus
+solve :: Sudoku -> Maybe Sudoku
+solve s | not (isOkay s) = Nothing
+solve s = solve' s (blanks s)
+
+-- Helper function to solve Sudokus
+-- Use 'isValidCandidate' function to check all candidates for a given position
+-- Check the next position until the list is empty
+solve' :: Sudoku -> [Pos] -> Maybe Sudoku
+solve' s [] = Just s
+solve' s (x:xs) = isValidCandidate s x newCandidate
+  where newCandidate = candidates s x
+
+-- Helper function that for a given Sudoku and a position, checks all possible candidates for this position
+-- For every valid candidate, then use 'solve' to check if the sudoku can be solved
+isValidCandidate :: Sudoku -> Pos -> [Int] -> Maybe Sudoku
+isValidCandidate _ _ [] = Nothing
+isValidCandidate s pos (x:xs) | isNothing checkNext = isValidCandidate s pos xs
+                              | otherwise = checkNext
+  where updated = update s pos (Just x)
+        checkNext = solve updated
+
+-- Function that for a given file,
+-- produces instructions for reading the Sudoku, solving it, and printing the answer
+readAndSolve :: FilePath -> IO ()
+readAndSolve file = do s <- readSudoku file
+                       let isSolved = solve s
+                       maybe (putStrLn "(no solution)") printSudoku isSolved
+
+-- Function that given two Sudokus, checks whether the first one is a solution
+-- and also whether the first one is a solution of the second one
+isSolutionOf :: Sudoku -> Sudoku -> Bool
+isSolutionOf s1 s2 | not(isOkay s1) && not(isOkay s2) = False
+                   | isNothing isSolution = False
+                   | otherwise = s1 == fromJust isSolution
+  where isSolution = solve s2
+
+-- Function to check if function 'solve' is sound
+prop_SolveSound :: Sudoku -> Property
+prop_SolveSound s | isNothing isSolved = discard
+                  | otherwise = isOkay(fromJust isSolved) ==> fromJust isSolved `isSolutionOf` s
+  where isSolved = solve s
+
+-- Method for testing on fewer examples (using the QuickCheck function quickCheckWith)
+fewerChecks prop = quickCheckWith stdArgs{ maxSuccess = 30 } prop

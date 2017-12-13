@@ -46,3 +46,8 @@ In this lab assignment, we implemented a simple variant of the game Black Jack, 
 ## Lab Assignment 3: Sudoku ##
 
 In this Lab Assignment, we designed a program that will be able to solve Sudokus, a popular logical puzzle originating from Japan. To implement a Sudoku-solving program, we need to come up with a way of modelling Sudokus. A Sudoku is a matrix of digits or blanks and the natural way of modelling a matrix is as a list of lists.
+
+## Lab Assignment 4: Graphical Calculator ##
+
+In this Lab Assignment, we designed and implemented a very simple graphical calculator. For the graphical part we use the Haste compiler which is able to compile Haskell code to an HTML file which can be run in a web browser. See this introduction to Haste on how to get started with Haste [here](http://https://haste-lang.org/).
+

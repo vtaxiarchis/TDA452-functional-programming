@@ -48,8 +48,8 @@ instance Show Expr where
 eval :: Expr -> Double -> Double
 eval (Num n) _ = n
 eval Var x = x
-eval (Add n1 n2) x = (eval n1 x) + (eval n2 x)
-eval (Mul n1 n2) x = (eval n1 x) * (eval n2 x)
+eval (Add n1 n2) x = eval n1 x + eval n2 x
+eval (Mul n1 n2) x = eval n1 x * eval n2 x
 eval (Sin n) x = sin (eval n x)
 eval (Cos n) x = cos (eval n x)
 
@@ -114,7 +114,7 @@ functionParser f s = do skipName
                         e <- factor
                         return (f e)
                      -- ensures name is skipped only if matching
-                     where skipName = sequence_ (fmap (char) s)
+                     where skipName = sequence_ (fmap char s)
 
 -- Parser for variables
 variableParser :: Parser Expr
@@ -207,7 +207,7 @@ prop_canSimplify :: Expr -> Bool
 prop_canSimplify e = all (\x -> x == True) results
                      where simple = simplify e
                            results = [(eval e r == eval simple r) &&
-                                      (isSimple simple) | r <- [0..10]]
+                                      isSimple simple | r <- [0..10]]
 
 
 -- Part G
@@ -229,4 +229,4 @@ differentiate' (Mul n1 n2) = simplify (Add (Mul n1' n2) (Mul n1 n2'))
                                    n2' = differentiate' n2
 
 differentiate' (Sin n) = Cos n
-differentiate' (Cos n) = (Mul (Num (-1)) (Sin n))
+differentiate' (Cos n) = Mul (Num (-1)) (Sin n)

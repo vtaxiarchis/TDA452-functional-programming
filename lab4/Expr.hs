@@ -8,19 +8,21 @@ import Data.Maybe
 import Test.QuickCheck
 
 -- Part A
--- Data type that represents all expressions.
--- It can be number, variable, addition, multiplication, sin or cos.
+-- Data type that represents expressions.
+-- An expression can be number, variable, addition, multiplication, sin or cos.
 data Expr = Num Double | Var |
             Add Expr Expr | Mul Expr Expr |
             Sin Expr | Cos Expr
   deriving(Eq)
 
 -- Part B
--- Function to convert any expression to string.
+-- Function to convert any expression to string
 showExpr :: Expr -> String
 showExpr (Num n) = show n
 showExpr Var = "x"
+showExpr (Add n1 n2@(Add n3 n4)) = showExpr n1 ++ "+(" ++ showExpr n2 ++ ")"
 showExpr (Add n1 n2) = showExpr n1 ++ "+" ++ showExpr n2
+showExpr (Mul n1 n2@(Mul n3 n4)) = showExpr'' n1 ++ "*(" ++ showExpr'' n2 ++ ")"
 showExpr (Mul n1 n2) = showExpr'' n1 ++ "*" ++ showExpr'' n2
 showExpr (Sin angle) = "sin " ++ showExpr' angle
 showExpr (Cos angle) = "cos " ++ showExpr' angle
@@ -93,6 +95,7 @@ factor = numberParser <|>
          functionParser Sin "sin" <|>
          functionParser Cos "cos"
 
+
 -- Parser for parenthesis expressions
 parenthesisParser :: Parser Expr
 parenthesisParser = do char '('
@@ -106,11 +109,12 @@ skipSpaces = zeroOrMore (sat isSpace)
 
 -- Parser for functions, captures function parameter
 functionParser :: (Expr -> b) -> String -> Parser b
-functionParser f s = do discardName
+functionParser f s = do skipName
                         skipSpaces
                         e <- factor
                         return (f e)
-                     where discardName = sequence_ (replicate (length s) item)
+                     -- ensures name is skipped only if matching
+                     where skipName = sequence_ (fmap (char) s)
 
 -- Parser for variables
 variableParser :: Parser Expr
@@ -148,3 +152,81 @@ arbExpr n = do op <- elements [Add, Mul]
 
 instance Arbitrary Expr where
   arbitrary = sized arbExpr
+
+-- Part F
+-- Function to simplify an expression to an equivalent expression
+simplify :: Expr -> Expr
+simplify (Add n1 n2) = simplify' (Add (simplify n1) (simplify n2))
+simplify (Mul n1 n2) = simplify' (Mul (simplify n1) (simplify n2))
+simplify (Sin n) = simplify' (Sin (simplify n))
+simplify (Cos n) = simplify' (Cos (simplify n))
+simplify n = n
+
+-- Helper function that simplifies expressions under following rules:
+--  x + y: if both x and y are numbers, or one of them is zero
+--  x * y: if both x and y are numbers, or one of them is zero or one
+simplify' :: Expr -> Expr
+simplify' (Add (Num n1) (Num n2)) = Num (n1 + n2)
+simplify' orig@(Add (Num n) n2) = case n of 0 -> simplify n2
+                                            _ -> orig
+simplify' orig@(Add n1 (Num n)) = case n of 0 -> simplify n1
+                                            _ -> orig
+
+simplify' (Mul (Num n1) (Num n2)) = Num (n1 * n2)
+simplify' orig@(Mul (Num n) n2) = case n of 0 -> Num 0
+                                            1 -> simplify n2
+                                            _ -> orig
+simplify' orig@(Mul n1 (Num n)) = case n of 0 -> Num 0
+                                            1 -> simplify n1
+                                            _ -> orig
+simplify' n = n
+
+-- Function that determine if an expression can be simplified further
+isSimple :: Expr -> Bool
+isSimple (Add (Num n1) (Num n2)) = False
+isSimple (Add (Num n) n2) = case n of 0 -> False
+                                      _ -> isSimple n2
+isSimple (Add n1 (Num n)) = case n of 0 -> False
+                                      _ -> isSimple n1
+
+isSimple (Mul (Num n1) (Num n2)) = False
+isSimple (Mul (Num n) n2) = case n of 0 -> False
+                                      1 -> False
+                                      _ -> isSimple n2
+isSimple (Mul n1 (Num n)) = case n of 0 -> False
+                                      1 -> False
+                                      _ -> isSimple n1
+
+isSimple (Sin n) = isSimple n
+isSimple (Cos n) = isSimple n
+isSimple n = True
+
+-- Property that checks simplified expression evaluates to the same value
+--  and cannot be simplified further
+prop_canSimplify :: Expr -> Bool
+prop_canSimplify e = all (\x -> x == True) results
+                     where simple = simplify e
+                           results = [(eval e r == eval simple r) &&
+                                      (isSimple simple) | r <- [0..10]]
+
+
+-- Part G
+-- Differentiates a given expression with respect to x
+differentiate :: Expr -> Expr
+differentiate e = differentiate' simple
+                  where simple = simplify e
+
+differentiate' :: Expr -> Expr
+differentiate' (Num _) = Num 0
+differentiate' Var     = Num 1
+
+differentiate' (Add n1 n2) = simplify (Add n1' n2')
+                             where n1' = differentiate' n1
+                                   n2' = differentiate' n2
+
+differentiate' (Mul n1 n2) = simplify (Add (Mul n1' n2) (Mul n1 n2'))
+                             where n1' = differentiate' n1
+                                   n2' = differentiate' n2
+
+differentiate' (Sin n) = Cos n
+differentiate' (Cos n) = (Mul (Num (-1)) (Sin n))

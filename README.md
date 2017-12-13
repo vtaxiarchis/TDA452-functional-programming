@@ -49,5 +49,5 @@ In this Lab Assignment, we designed a program that will be able to solve Sudokus
 
 ## Lab Assignment 4: Graphical Calculator ##
 
-In this Lab Assignment, we designed and implemented a very simple graphical calculator. For the graphical part we use the Haste compiler which is able to compile Haskell code to an HTML file which can be run in a web browser. See this introduction to Haste on how to get started with Haste [here](http://https://haste-lang.org/).
+In this Lab Assignment, we designed and implemented a very simple graphical calculator. For the graphical part we use the Haste compiler which is able to compile Haskell code to an HTML file which can be run in a web browser. See this introduction to Haste on how to get started with Haste [here](https://haste-lang.org/).
 

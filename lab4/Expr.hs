@@ -122,9 +122,29 @@ numberParser :: Parser Expr
 numberParser = do n <- readsP :: Parser Double
                   return (Num n)
 
+-- Part E
 -- Property that checks whether generated string can be parsed back
-prop_Parsable :: Expr -> Bool
-prop_Parsable e = case parsed of Just p -> p == e
-                                 Nothing -> False
-                  where parsed = readExpr (showExpr e)
+prop_ShowReadExpr :: Expr -> Bool
+prop_ShowReadExpr e = case parsed of Just p -> p == e
+                                     Nothing -> False
+                      where parsed = readExpr (showExpr e)
 
+-- Random generator that generates an expression based on a supplied size
+arbExpr :: Int -> Gen Expr
+arbExpr 0 = do e <- elements [Num n | n<-[1..10]]
+               roll <- elements [1, 2]
+               return (case roll of 1 -> e
+                                    2 -> Var)
+
+arbExpr n = do op <- elements [Add, Mul]
+               func <- elements [Sin, Cos]
+               n' <- elements [0 .. n-1]
+               e1 <- arbExpr n'
+               e2 <- arbExpr (n-1 - n')
+               e3 <- arbExpr (n - 1)
+               roll <- elements [1, 2]
+               return (case roll of 1 -> func e3
+                                    2 -> op e1 e2)
+
+instance Arbitrary Expr where
+  arbitrary = sized arbExpr

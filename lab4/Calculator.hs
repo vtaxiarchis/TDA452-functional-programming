@@ -11,6 +11,7 @@ canWidth, canHeight :: Num a => a
 canWidth  = 300
 canHeight = 300
 
+-- Part H
 -- Function to calculate all the points of the graph in terms of pixels
 points :: Expr -> Double -> (Int,Int) -> [Point]
 points exp_ scale (width,height) = zip x y
@@ -30,6 +31,7 @@ pixToReal width scale x = (2*x - width)/2 * scale
 realToPix :: Double -> Double -> Double -> Double
 realToPix width scale y = width/2 -y/scale
 
+-- Part I
 -- Function that reads the expression from the given input
 -- element and draws the graph on the given canvas
 readAndDraw :: Elem -> Elem -> Canvas -> Double -> IO ()
@@ -57,6 +59,16 @@ checkExpr expr = do
                then return $ readExpr $ fromJust isExpr
                else return $ Nothing
 
+-- Part J
+-- Function that zooms in or zooms out the canvas
+zooming :: Elem -> Elem -> Canvas -> Double -> IO ()
+zooming input display can step =
+    do
+      expr <- getValue display
+      let scale = (read (fromJust expr)) + step :: Double
+      readAndDraw input display can scale
+
+-- Part K
 
 main = do
     -- Elements
@@ -65,13 +77,15 @@ main = do
     input   <- mkInput 20 "x"                -- The formula input
     draw    <- mkButton "Draw graph"         -- The draw button
     display <- mkInput 20 "0"                -- The display input
+    zoomIn  <- mkButton "Zoom +"                  -- The zoom in button
+    zoomOut <- mkButton "Zoom -"                  -- The zoom in button
       -- The markup "<i>...</i>" means that the text inside should be rendered
       -- in italics.
 
     -- Layout
     formula <- mkDiv
     row formula [fx,input]
-    column documentBody [canvas,formula,draw]
+    column documentBody [canvas,formula,draw,zoomIn,zoomOut]
 
     -- Styling
     setStyle documentBody "backgroundColor" "lightblue"
@@ -83,7 +97,12 @@ main = do
     -- Scale (1 pixel corresponds to 0.04 in the floating point world)
     let scale = 0.04
 
+    -- Step definition for the zoom functionality
+    let step = 0.01
+
     -- Interaction
     Just can <- fromElem canvas
-    onEvent draw  Click  $ \ _ -> readAndDraw input display can scale
+    onEvent draw Click $ \ _ -> readAndDraw input display can scale
     onEvent input Change $ \ _ -> readAndDraw input display can scale
+    onEvent zoomIn Click $ \_  -> zooming input display can (-step)
+    onEvent zoomOut Click $ \_  -> zooming input display can step

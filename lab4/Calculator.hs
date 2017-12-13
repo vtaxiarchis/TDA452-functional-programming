@@ -36,7 +36,7 @@ realToPix width scale y = width/2 -y/scale
 -- element and draws the graph on the given canvas
 readAndDraw :: Elem -> Elem -> Canvas -> Double -> IO ()
 readAndDraw input display can scale = do
-      set display [ prop "value" =: (show scale) ]
+      set display [prop "value" =: show scale]
       readAndDraw' input can scale
 
 -- Helper function that checks whether it is an expression or not
@@ -57,7 +57,7 @@ checkExpr expr = do
                isExpr <- getValue expr
                if isJust isExpr
                then return $ readExpr $ fromJust isExpr
-               else return $ Nothing
+               else return Nothing
 
 -- Part J
 -- Function that zooms in or zooms out the canvas
@@ -65,10 +65,17 @@ zooming :: Elem -> Elem -> Canvas -> Double -> IO ()
 zooming input display can step =
     do
       expr <- getValue display
-      let scale = (read (fromJust expr)) + step :: Double
+      let scale = read (fromJust expr) + step :: Double
       readAndDraw input display can scale
 
 -- Part K
+-- Function that displays the differentiated expression
+-- Then readAndDraw can be used to draw the differentiated expression
+differentiateExpr :: Elem -> IO ()
+differentiateExpr input = do
+    expr <- getProp input "value"
+    let expr_ = fromJust $ readExpr expr
+    set input [ prop "value" =: showExpr (differentiate expr_) ]
 
 main = do
     -- Elements
@@ -77,15 +84,16 @@ main = do
     input   <- mkInput 20 "x"                -- The formula input
     draw    <- mkButton "Draw graph"         -- The draw button
     display <- mkInput 20 "0"                -- The display input
-    zoomIn  <- mkButton "Zoom +"                  -- The zoom in button
-    zoomOut <- mkButton "Zoom -"                  -- The zoom in button
+    zoomIn  <- mkButton "Zoom +"             -- The zoom in button
+    zoomOut <- mkButton "Zoom -"             -- The zoom out button
+    differentiateBt <- mkButton "Differentiate expression"
       -- The markup "<i>...</i>" means that the text inside should be rendered
       -- in italics.
 
     -- Layout
     formula <- mkDiv
     row formula [fx,input]
-    column documentBody [canvas,formula,draw,zoomIn,zoomOut]
+    column documentBody [canvas,formula,draw,zoomIn,zoomOut,differentiateBt]
 
     -- Styling
     setStyle documentBody "backgroundColor" "lightblue"
@@ -106,3 +114,4 @@ main = do
     onEvent input Change $ \ _ -> readAndDraw input display can scale
     onEvent zoomIn Click $ \_  -> zooming input display can (-step)
     onEvent zoomOut Click $ \_  -> zooming input display can step
+    onEvent differentiateBt Click $ \_  -> differentiateExpr input

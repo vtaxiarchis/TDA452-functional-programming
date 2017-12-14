@@ -33,7 +33,7 @@ Ok, modules loaded: Main.
 *Main>
 ```
 
-## Lab assignment 1: the power function ##
+## Lab assignment 1: The Power function ##
 
 In this lab assignment, we implemented the well-known "power" function in two different new ways. The power function takes two arguments n and k and computes n^k (works only for non-negative k).
 
